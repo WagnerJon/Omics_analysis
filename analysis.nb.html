@@ -1763,32 +1763,37 @@ library(readxl)</code></pre>
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZm9sZGVyX3BhdGggPC0gXCJDOlxcXFxVc2Vyc1xcXFxKb25hc1xcXFxPbmVEcml2ZSAtIFJ1cHJlY2h0LUthcmxzLVVuaXZlcnNpdMOkdCBIZWlkZWxiZXJnXFxcXE9taWNzXCJcbmZpbGVfbGlzdCA8LSBsaXN0LmZpbGVzKHBhdGggPSBmb2xkZXJfcGF0aCwgcGF0dGVybiA9IFwiKi54bHN4XCIsZnVsbC5uYW1lcyA9IFRSVUUpXG5cbmRhdGFfbGlzdCA8LSBsaXN0KClcblxuIyBMb29wIHRocm91Z2ggZWFjaCBmaWxlIGFuZCByZWFkIHRoZSBkYXRhXG5mb3IgKGZpbGUgaW4gZmlsZV9saXN0KSB7XG4gICMgUmVhZCB0aGUgeGxzeCBmaWxlIGludG8gYSBkYXRhZnJhbWVcbiAgdGVtcF9kYXRhIDwtIHJlYWRfZXhjZWwoZmlsZSlcbiAgXG4gICMgQWRkIGEgY29sdW1uIHRvIGluZGljYXRlIHRoZSBzb3VyY2UgZmlsZVxuICB0ZW1wX2RhdGEgPC0gdGVtcF9kYXRhICU+JSBtdXRhdGUoc291cmNlX2ZpbGUgPSBzdWIoXCIuKj9fKC4qPylcXFxcLi4qJFwiLCBcIlxcXFwxXCIsIGJhc2VuYW1lKGZpbGUpKSlcbiAgXG4gICMgQXBwZW5kIHRoZSBkYXRhZnJhbWUgdG8gdGhlIGxpc3RcbiAgZGF0YV9saXN0IDwtIGFwcGVuZChkYXRhX2xpc3QsIGxpc3QodGVtcF9kYXRhKSlcbn1cblxuIyBDb21iaW5lIGFsbCBkYXRhZnJhbWVzIGludG8gb25lXG5jb21iaW5lZF9kYXRhIDwtIGJpbmRfcm93cyhkYXRhX2xpc3QpXG5gYGAifQ== -->
-<pre class="r"><code>folder_path &lt;- &quot;C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics&quot;
-file_list &lt;- list.files(path = folder_path, pattern = &quot;*.xlsx&quot;,full.names = TRUE)
-
-data_list &lt;- list()
-
-# Loop through each file and read the data
-for (file in file_list) {
-  # Read the xlsx file into a dataframe
-  temp_data &lt;- read_excel(file)
-  
-  # Add a column to indicate the source file
-  temp_data &lt;- temp_data %&gt;% mutate(source_file = sub(&quot;.*?_(.*?)\\..*$&quot;, &quot;\\1&quot;, basename(file)))
-  
-  # Append the dataframe to the list
-  data_list &lt;- append(data_list, list(temp_data))
-}
-
-# Combine all dataframes into one
-combined_data &lt;- bind_rows(data_list)</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29tYmluZWRfZGF0YSA8LSBsZWZ0X2pvaW4oY29tYmluZWRfZGF0YSwgcGxhdGVfbGF5b3V0KVxuXG5gYGAifQ== -->
+<pre class="r"><code>combined_data &lt;- left_join(combined_data, plate_layout)
+</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiSm9pbmluZyB3aXRoIGBieSA9IGpvaW5fYnkoV2VsbClgXG4ifQ== -->
+<pre><code>Joining with `by = join_by(Well)`</code></pre>
+<!-- rnb-output-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZm9yICh2YWx1ZSBpbiB1bmlxdWUoY29tYmluZWRfZGF0YSRzb3VyY2VfZmlsZSkpIHtcbiAgZmlsdGVyZWQgPC0gY29tYmluZWRfZGF0YSAlPiVcbiAgICBmaWx0ZXIoc291cmNlX2ZpbGU9PXZhbHVlKVxuICBcbiAgcGxvdCA8LSBnZ3Bsb3QoZmlsdGVyZWQsYWVzKHg9YFByZWRpY3Rpb24gKExhYmVsRGVwZW5kZW5jaWVzKWAsZmlsbD1hcy5mYWN0b3IoYFByZWRpY3Rpb24gKExhYmVsRGVwZW5kZW5jaWVzKWApKSkgKyBcbiAgICBnZW9tX2JhcigpICsgXG4gICAgZmFjZXRfd3JhcCh+Q29uZGl0aW9uKStcbiAgICBnZ3RpdGxlKHZhbHVlKVxuICBnZ3NhdmUoZmlsZW5hbWUgPSBwYXN0ZShcInBsb3RfXCIsIHZhbHVlLCBcIi5wbmdcIiwgc2VwID0gXCJcIiksIHBsb3QgPSBwbG90KVxufVxuYGBgIn0= -->
+<pre class="r"><code>for (value in unique(combined_data$source_file)) {
+  filtered &lt;- combined_data %&gt;%
+    filter(source_file==value)
+  
+  plot &lt;- ggplot(filtered,aes(x=`Prediction (LabelDependencies)`,fill=as.factor(`Prediction (LabelDependencies)`))) + 
+    geom_bar() + 
+    facet_wrap(~Condition)+
+    ggtitle(value)
+  ggsave(filename = paste(&quot;plot_&quot;, value, &quot;.png&quot;, sep = &quot;&quot;), plot = plot)
+}</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiU2F2aW5nIDcgeCA3IGluIGltYWdlXG4ifQ== -->
+<pre><code>Saving 7 x 7 in image</code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 
-<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2siDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQoNCg0KYGBge3IgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShkYXRhLnRhYmxlKQ0KbGlicmFyeShyZWFkeGwpDQpgYGANCg0KYGBge3J9DQpmb2xkZXJfcGF0aCA8LSAiQzpcXFVzZXJzXFxKb25hc1xcT25lRHJpdmUgLSBSdXByZWNodC1LYXJscy1Vbml2ZXJzaXTDpHQgSGVpZGVsYmVyZ1xcT21pY3MiDQpmaWxlX2xpc3QgPC0gbGlzdC5maWxlcyhwYXRoID0gZm9sZGVyX3BhdGgsIHBhdHRlcm4gPSAiKi54bHN4IixmdWxsLm5hbWVzID0gVFJVRSkNCg0KZGF0YV9saXN0IDwtIGxpc3QoKQ0KDQojIExvb3AgdGhyb3VnaCBlYWNoIGZpbGUgYW5kIHJlYWQgdGhlIGRhdGENCmZvciAoZmlsZSBpbiBmaWxlX2xpc3QpIHsNCiAgIyBSZWFkIHRoZSB4bHN4IGZpbGUgaW50byBhIGRhdGFmcmFtZQ0KICB0ZW1wX2RhdGEgPC0gcmVhZF9leGNlbChmaWxlKQ0KICANCiAgIyBBZGQgYSBjb2x1bW4gdG8gaW5kaWNhdGUgdGhlIHNvdXJjZSBmaWxlDQogIHRlbXBfZGF0YSA8LSB0ZW1wX2RhdGEgJT4lIG11dGF0ZShzb3VyY2VfZmlsZSA9IHN1YigiLio/XyguKj8pXFwuLiokIiwgIlxcMSIsIGJhc2VuYW1lKGZpbGUpKSkNCiAgDQogICMgQXBwZW5kIHRoZSBkYXRhZnJhbWUgdG8gdGhlIGxpc3QNCiAgZGF0YV9saXN0IDwtIGFwcGVuZChkYXRhX2xpc3QsIGxpc3QodGVtcF9kYXRhKSkNCn0NCg0KIyBDb21iaW5lIGFsbCBkYXRhZnJhbWVzIGludG8gb25lDQpjb21iaW5lZF9kYXRhIDwtIGJpbmRfcm93cyhkYXRhX2xpc3QpDQpgYGANCg0K</div>
+<div id="rmd-source-code">LS0tDQp0aXRsZTogIlIgTm90ZWJvb2siDQpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sNCi0tLQ0KDQoNCg0KYGBge3IgbWVzc2FnZT1GQUxTRSwgd2FybmluZz1GQUxTRX0NCmxpYnJhcnkodGlkeXZlcnNlKQ0KbGlicmFyeShkYXRhLnRhYmxlKQ0KbGlicmFyeShyZWFkeGwpDQpsaWJyYXJ5KGdncGxvdDIpDQpgYGANCg0KYGBge3J9DQpmb2xkZXJfcGF0aCA8LSAiQzpcXFVzZXJzXFxKb25hc1xcT25lRHJpdmUgLSBSdXByZWNodC1LYXJscy1Vbml2ZXJzaXTDpHQgSGVpZGVsYmVyZ1xcT21pY3MiDQpmaWxlX2xpc3QgPC0gbGlzdC5maWxlcyhwYXRoID0gZm9sZGVyX3BhdGgsIHBhdHRlcm4gPSAiKi54bHN4IixmdWxsLm5hbWVzID0gVFJVRSkNCg0KZGF0YV9saXN0IDwtIGxpc3QoKQ0KDQojIExvb3AgdGhyb3VnaCBlYWNoIGZpbGUgYW5kIHJlYWQgdGhlIGRhdGENCmZvciAoZmlsZSBpbiBmaWxlX2xpc3QpIHsNCiAgIyBSZWFkIHRoZSB4bHN4IGZpbGUgaW50byBhIGRhdGFmcmFtZQ0KICB0ZW1wX2RhdGEgPC0gcmVhZF9leGNlbChmaWxlKQ0KICANCiAgIyBBZGQgYSBjb2x1bW4gdG8gaW5kaWNhdGUgdGhlIHNvdXJjZSBmaWxlDQogIHRlbXBfZGF0YSA8LSB0ZW1wX2RhdGEgJT4lIG11dGF0ZShzb3VyY2VfZmlsZSA9IHN1YigiLio/XyguKj8pXFwuLiokIiwgIlxcMSIsIGJhc2VuYW1lKGZpbGUpKSkNCiAgDQogICMgQXBwZW5kIHRoZSBkYXRhZnJhbWUgdG8gdGhlIGxpc3QNCiAgZGF0YV9saXN0IDwtIGFwcGVuZChkYXRhX2xpc3QsIGxpc3QodGVtcF9kYXRhKSkNCn0NCg0KIyBDb21iaW5lIGFsbCBkYXRhZnJhbWVzIGludG8gb25lDQpjb21iaW5lZF9kYXRhIDwtIGJpbmRfcm93cyhkYXRhX2xpc3QpDQoNCnBsYXRlX2xheW91dCA8LSByZWFkX2V4Y2VsKCJDOlxcVXNlcnNcXEpvbmFzXFxPbmVEcml2ZSAtIFJ1cHJlY2h0LUthcmxzLVVuaXZlcnNpdMOkdCBIZWlkZWxiZXJnXFxPbWljc1xccGxhdGVfbGF5b3V0Lnhsc3giKQ0KDQpjb21iaW5lZF9kYXRhIDwtIGxlZnRfam9pbihjb21iaW5lZF9kYXRhLCBwbGF0ZV9sYXlvdXQpDQpgYGANCg0KDQpgYGB7cn0NCmZvciAodmFsdWUgaW4gdW5pcXVlKGNvbWJpbmVkX2RhdGEkc291cmNlX2ZpbGUpKSB7DQogIGZpbHRlcmVkIDwtIGNvbWJpbmVkX2RhdGEgJT4lDQogICAgZmlsdGVyKHNvdXJjZV9maWxlPT12YWx1ZSkNCiAgDQogIHBsb3QgPC0gZ2dwbG90KGZpbHRlcmVkLGFlcyh4PWBQcmVkaWN0aW9uIChMYWJlbERlcGVuZGVuY2llcylgLGZpbGw9YXMuZmFjdG9yKGBQcmVkaWN0aW9uIChMYWJlbERlcGVuZGVuY2llcylgKSkpICsgDQogICAgZ2VvbV9iYXIoKSArIA0KICAgIGZhY2V0X3dyYXAofkNvbmRpdGlvbikrDQogICAgZ2d0aXRsZSh2YWx1ZSkNCiAgZ2dzYXZlKGZpbGVuYW1lID0gcGFzdGUoInBsb3RfIiwgdmFsdWUsICIucG5nIiwgc2VwID0gIiIpLCBwbG90ID0gcGxvdCkNCn0NCmBgYA0KDQo=</div>
 
 
 

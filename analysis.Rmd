@@ -9,6 +9,7 @@ output: html_notebook
 library(tidyverse)
 library(data.table)
 library(readxl)
+library(ggplot2)
 ```
 
 ```{r}
@@ -31,5 +32,23 @@ for (file in file_list) {
 
 # Combine all dataframes into one
 combined_data <- bind_rows(data_list)
+
+plate_layout <- read_excel("C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.xlsx")
+
+combined_data <- left_join(combined_data, plate_layout)
+```
+
+
+```{r}
+for (value in unique(combined_data$source_file)) {
+  filtered <- combined_data %>%
+    filter(source_file==value)
+  
+  plot <- ggplot(filtered,aes(x=`Prediction (LabelDependencies)`,fill=as.factor(`Prediction (LabelDependencies)`))) + 
+    geom_bar() + 
+    facet_wrap(~Condition)+
+    ggtitle(value)
+  ggsave(filename = paste("plot_", value, ".png", sep = ""), plot = plot)
+}
 ```
 
