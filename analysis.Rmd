@@ -1,0 +1,35 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(data.table)
+library(readxl)
+```
+
+```{r}
+folder_path <- "C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics"
+file_list <- list.files(path = folder_path, pattern = "*.xlsx",full.names = TRUE)
+
+data_list <- list()
+
+# Loop through each file and read the data
+for (file in file_list) {
+  # Read the xlsx file into a dataframe
+  temp_data <- read_excel(file)
+  
+  # Add a column to indicate the source file
+  temp_data <- temp_data %>% mutate(source_file = sub(".*?_(.*?)\\..*$", "\\1", basename(file)))
+  
+  # Append the dataframe to the list
+  data_list <- append(data_list, list(temp_data))
+}
+
+# Combine all dataframes into one
+combined_data <- bind_rows(data_list)
+```
+
