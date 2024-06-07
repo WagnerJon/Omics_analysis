@@ -34,32 +34,55 @@ for (file in file_list) {
 # Combine all dataframes into one
 combined_data <- bind_rows(data_list)
 
+combined_data <- combined_data %>%
+  mutate(Well = sub("-.*", "", Filename)) %>%
+  mutate(`Prediction (LabelDependencies)` = ifelse(tolower(`Prediction (LabelDependencies)`) == "dead", "Dead", `Prediction (LabelDependencies)`))
+
 plate_layout <- read_delim("C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv",delim = ";")
 
 combined_data <- left_join(combined_data, plate_layout)
 ```
+
 ```{r}
 filtered <- combined_data %>%
-  filter(source_file=='Jonas') %>%
+  #filter(source_file=='Jonas') %>%
   rename(Prediction = `Prediction (LabelDependencies)`)
   
 cell_count <- filtered %>%
-  group_by(Condition, `Prediction`) %>%
+  group_by(Condition, `Prediction`,source_file) %>%
   tally()
 
 cell_perc <- cell_count %>%
-  group_by(Condition) %>%
+  group_by(Condition,source_file) %>%
   mutate(percentage = n / sum(n) * 100)
 ```
 
 ```{r}
 ggplot(cell_perc, aes(x = Condition, y = percentage, fill = `Prediction`)) + 
   geom_col(position = "dodge") + 
+  geom_errorbar(aes(ymin = mean_value - se, ymax = mean_value + se), width = 0.2) + 
   labs(x = "",y = "Percentage", fill = "Phenotype")
+```
+```{r}
+summary_df <- cell_perc %>%
+  group_by(Condition,Prediction) %>%
+  summarise(
+    mean_value = mean(percentage),
+    se = sd(percentage) / sqrt(n())
+  )
+
+ggplot(summary_df, aes(x = Condition, y = mean_value, fill = `Prediction`)) + 
+  geom_col(position = "dodge") + 
+  geom_errorbar(aes(ymin = mean_value - se, ymax = mean_value + se),position = "dodge") + 
+  labs(x = "",y = "Percentage", fill = "Phenotype",title = "Pooled data")
 ```
 
 ```{r}
-my_comparisons <- list( c("dead", "Prometaphase"), c("Prometaphase", "Interphase"), c("dead", "Interphase") )
+
+```
+
+```{r}
+my_comparisons <- list( c("Dead", "Prometaphase"), c("Prometaphase", "Interphase"), c("Dead", "Interphase") )
 ggboxplot(filtered, x = "Prediction", y = "Entropy | DIAGONAL | 1 | 40",
           fill = "Prediction", palette = "jco")+ 
   stat_compare_means(comparisons = my_comparisons,method = "t.test") # Add pairwise comparisons p-value
