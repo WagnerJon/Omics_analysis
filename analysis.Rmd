@@ -10,6 +10,7 @@ library(tidyverse)
 library(data.table)
 library(readxl)
 library(ggplot2)
+library(ggpubr)
 ```
 
 ```{r}
@@ -33,9 +34,51 @@ for (file in file_list) {
 # Combine all dataframes into one
 combined_data <- bind_rows(data_list)
 
-plate_layout <- read_excel("C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.xlsx")
+plate_layout <- read_delim("C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv",delim = ";")
 
 combined_data <- left_join(combined_data, plate_layout)
+```
+```{r}
+filtered <- combined_data %>%
+  filter(source_file=='Jonas') %>%
+  rename(Prediction = `Prediction (LabelDependencies)`)
+  
+cell_count <- filtered %>%
+  group_by(Condition, `Prediction`) %>%
+  tally()
+
+cell_perc <- cell_count %>%
+  group_by(Condition) %>%
+  mutate(percentage = n / sum(n) * 100)
+```
+
+```{r}
+ggplot(cell_perc, aes(x = Condition, y = percentage, fill = `Prediction`)) + 
+  geom_col(position = "dodge") + 
+  labs(x = "",y = "Percentage", fill = "Phenotype")
+```
+
+```{r}
+my_comparisons <- list( c("dead", "Prometaphase"), c("Prometaphase", "Interphase"), c("dead", "Interphase") )
+ggboxplot(filtered, x = "Prediction", y = "Entropy | DIAGONAL | 1 | 40",
+          fill = "Prediction", palette = "jco")+ 
+  stat_compare_means(comparisons = my_comparisons,method = "t.test") # Add pairwise comparisons p-value
+```
+
+```{r}
+# Loop over columns 5 to 13
+for (i in 5:13) {
+  # Get the column name
+  column_name <- colnames(filtered)[i]
+  
+  # Create the plot
+  p <- ggplot(filtered, aes(x=column_name, group=`Prediction`, fill=`Prediction`)) +
+    geom_density(adjust=1.5, alpha=.4)
+  
+  # Print the plot
+  print(p)
+}
+
 ```
 
 
