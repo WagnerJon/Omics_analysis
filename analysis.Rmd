@@ -15,6 +15,9 @@ library(ggpubr)
 
 ```{r}
 folder_path <- "C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics"
+folder_path <- "B:\\OneDrive\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics"
+plate_layout_path <- "C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv"
+plate_layout_path <- "B:\\OneDrive\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv"
 file_list <- list.files(path = folder_path, pattern = "*.xlsx",full.names = TRUE)
 
 data_list <- list()
@@ -36,9 +39,11 @@ combined_data <- bind_rows(data_list)
 
 combined_data <- combined_data %>%
   mutate(Well = sub("-.*", "", Filename)) %>%
-  mutate(`Prediction (LabelDependencies)` = ifelse(tolower(`Prediction (LabelDependencies)`) == "dead", "Dead", `Prediction (LabelDependencies)`))
+  mutate(`Prediction (LabelDependencies)` = ifelse(tolower(`Prediction (LabelDependencies)`) == "dead", "Dead", `Prediction (LabelDependencies)`)) %>%
+  mutate(`Prediction (LabelDependencies)` = ifelse(tolower(`Prediction (LabelDependencies)`) == "interphase", "Interphase", `Prediction (LabelDependencies)`)) %>%
+  mutate(`Prediction (LabelDependencies)` = ifelse(tolower(`Prediction (LabelDependencies)`) == "prometaphase", "Prometaphase", `Prediction (LabelDependencies)`))
 
-plate_layout <- read_delim("C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv",delim = ";")
+plate_layout <- read_delim(plate_layout_path,delim = ";")
 
 combined_data <- left_join(combined_data, plate_layout)
 ```
@@ -58,11 +63,19 @@ cell_perc <- cell_count %>%
 ```
 
 ```{r}
-ggplot(cell_perc, aes(x = Condition, y = percentage, fill = `Prediction`)) + 
-  geom_col(position = "dodge") + 
-  geom_errorbar(aes(ymin = mean_value - se, ymax = mean_value + se), width = 0.2) + 
-  labs(x = "",y = "Percentage", fill = "Phenotype")
+ggplot(filtered, aes(x=`Prediction (LabelDependencies) (Confidence)`, group=`Prediction`, fill=`Prediction`)) +
+  geom_density(adjust=1.5, alpha=.4)+
+  facet_wrap(~source_file)
 ```
+
+```{r}
+filtered %>%
+  filter(source_file=='Emma') %>%
+  ggplot(aes(x = Condition, y = Diameter, fill = `Prediction`)) + 
+  geom_col(position = "dodge") +
+  theme_classic()
+```
+
 ```{r}
 summary_df <- cell_perc %>%
   group_by(Condition,Prediction) %>%
@@ -73,8 +86,9 @@ summary_df <- cell_perc %>%
 
 ggplot(summary_df, aes(x = Condition, y = mean_value, fill = `Prediction`)) + 
   geom_col(position = "dodge") + 
-  geom_errorbar(aes(ymin = mean_value - se, ymax = mean_value + se),position = "dodge") + 
-  labs(x = "",y = "Percentage", fill = "Phenotype",title = "Pooled data")
+  geom_errorbar(aes(ymin = mean_value - se, ymax = mean_value + se),position = position_dodge(0.9), width = 0.4) + 
+  labs(x = "",y = "Percentage", fill = "Phenotype",title = "Pooled data")+
+  ylim(0,100)
 ```
 
 ```{r}
@@ -88,20 +102,24 @@ ggboxplot(filtered, x = "Prediction", y = "Entropy | DIAGONAL | 1 | 40",
   stat_compare_means(comparisons = my_comparisons,method = "t.test") # Add pairwise comparisons p-value
 ```
 
+# ```{r}
+# # Loop over columns 5 to 13
+# for (i in 5:13) {
+#   # Get the column name
+#   column_name <- colnames(filtered)[i]
+#   
+#   # Create the plot
+#   p <- ggplot(filtered, aes(x=column_name, group=`Prediction`, fill=`Prediction`)) +
+#     geom_density(adjust=1.5, alpha=.4)
+#   
+#   # Print the plot
+#   print(p)
+# }
+# 
+# ```
 ```{r}
-# Loop over columns 5 to 13
-for (i in 5:13) {
-  # Get the column name
-  column_name <- colnames(filtered)[i]
-  
-  # Create the plot
-  p <- ggplot(filtered, aes(x=column_name, group=`Prediction`, fill=`Prediction`)) +
+ggplot(filtered, aes(x=Circularity, group=`Prediction`, fill=`Prediction`)) +
     geom_density(adjust=1.5, alpha=.4)
-  
-  # Print the plot
-  print(p)
-}
-
 ```
 
 
@@ -110,9 +128,8 @@ for (value in unique(combined_data$source_file)) {
   filtered <- combined_data %>%
     filter(source_file==value)
   
-  plot <- ggplot(filtered,aes(x=`Prediction (LabelDependencies)`,fill=as.factor(`Prediction (LabelDependencies)`))) + 
-    geom_bar() + 
-    facet_wrap(~Condition)+
+  plot <- ggplot(filtered,aes(x = Condition, fill = `Prediction (LabelDependencies)`)) + 
+    geom_bar(position = "dodge") + 
     ggtitle(value)
   ggsave(filename = paste("plot_", value, ".png", sep = ""), plot = plot)
 }
