@@ -15,9 +15,9 @@ library(ggpubr)
 
 ```{r}
 folder_path <- "C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics"
-folder_path <- "B:\\OneDrive\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics"
+#folder_path <- "B:\\OneDrive\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics"
 plate_layout_path <- "C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv"
-plate_layout_path <- "B:\\OneDrive\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv"
+#plate_layout_path <- "B:\\OneDrive\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv"
 file_list <- list.files(path = folder_path, pattern = "*.xlsx",full.names = TRUE)
 
 data_list <- list()
@@ -91,9 +91,6 @@ ggplot(summary_df, aes(x = Condition, y = mean_value, fill = `Prediction`)) +
   ylim(0,100)
 ```
 
-```{r}
-
-```
 
 ```{r}
 my_comparisons <- list( c("Dead", "Prometaphase"), c("Prometaphase", "Interphase"), c("Dead", "Interphase") )
@@ -118,8 +115,9 @@ ggboxplot(filtered, x = "Prediction", y = "Entropy | DIAGONAL | 1 | 40",
 # 
 # ```
 ```{r}
-ggplot(filtered, aes(x=Circularity, group=`Prediction`, fill=`Prediction`)) +
-    geom_density(adjust=1.5, alpha=.4)
+ggplot(filtered, aes(x=`Prediction (LabelDependencies) (Confidence)`, group=`Prediction`, fill=`Prediction`)) +
+    geom_density(adjust=1.5, alpha=.4)+
+  facet_grid(~source_file)
 ```
 
 
@@ -133,5 +131,13 @@ for (value in unique(combined_data$source_file)) {
     ggtitle(value)
   ggsave(filename = paste("plot_", value, ".png", sep = ""), plot = plot)
 }
+```
+
+```{r}
+Daniel_data <- filtered %>%
+  filter(source_file=="Daniel")
+Jonas_data <- filtered %>%
+  filter(source_file=="Jonas")
+ks.test(Daniel_data$Mean,Jonas_data$Mean)
 ```
 
