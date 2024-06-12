@@ -14,10 +14,10 @@ library(ggpubr)
 ```
 
 ```{r}
-folder_path <- "C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics"
-#folder_path <- "B:\\OneDrive\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics"
-plate_layout_path <- "C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv"
-#plate_layout_path <- "B:\\OneDrive\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv"
+#folder_path <- "C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics"
+folder_path <- "B:\\OneDrive\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics"
+#plate_layout_path <- "C:\\Users\\Jonas\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv"
+plate_layout_path <- "B:\\OneDrive\\OneDrive - Ruprecht-Karls-Universität Heidelberg\\Omics\\plate_layout.csv"
 file_list <- list.files(path = folder_path, pattern = "*.xlsx",full.names = TRUE)
 
 data_list <- list()
@@ -63,14 +63,28 @@ cell_perc <- cell_count %>%
 ```
 
 ```{r}
-ggplot(filtered, aes(x=`Prediction (LabelDependencies) (Confidence)`, group=`Prediction`, fill=`Prediction`)) +
+ggplot(filtered, aes(x=Mean, group=`Prediction`, fill=`Prediction`)) +
   geom_density(adjust=1.5, alpha=.4)+
-  facet_wrap(~source_file)
+  facet_wrap(~source_file)+
+  theme_minimal()
 ```
 
 ```{r}
+summary_data <- filtered %>%
+  filter(source_file=="Jonas") %>%
+  group_by(Condition, Prediction) %>%
+  summarise(
+    mean_diameter = mean(Mean),
+    se_diameter = sd(Mean) / sqrt(n())
+  )
+ggplot(summary_data, aes(x = Condition, y = mean_diameter, fill = Prediction)) + 
+  geom_col(position = "dodge") +
+  geom_errorbar(aes(ymin = mean_diameter - se_diameter, ymax = mean_diameter + se_diameter), 
+                position = position_dodge(width = 0.9), width = 0.4) +
+  theme_classic() +
+  labs(y = "Mean Intensity (mean ± SE)")
 filtered %>%
-  filter(source_file=='Emma') %>%
+  #filter(source_file=='Jonas') %>%
   ggplot(aes(x = Condition, y = Diameter, fill = `Prediction`)) + 
   geom_col(position = "dodge") +
   theme_classic()
@@ -93,10 +107,13 @@ ggplot(summary_df, aes(x = Condition, y = mean_value, fill = `Prediction`)) +
 
 
 ```{r}
-my_comparisons <- list( c("Dead", "Prometaphase"), c("Prometaphase", "Interphase"), c("Dead", "Interphase") )
-ggboxplot(filtered, x = "Prediction", y = "Entropy | DIAGONAL | 1 | 40",
-          fill = "Prediction", palette = "jco")+ 
-  stat_compare_means(comparisons = my_comparisons,method = "t.test") # Add pairwise comparisons p-value
+my_comparisons <- list( c("Dead", "Interphase"), c("Prometaphase", "Interphase"), c("Dead", "Prometaphase") )
+symnum.args <- list(cutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, Inf), symbols = c("****", "***", "**", "*", "ns"))
+ggboxplot(filtered, x = "Prediction", y = "Diameter",
+          fill = "Prediction",palette = c("red","blue","green"),outlier.shape = NA)+
+stat_compare_means(comparisons = my_comparisons,method = "t.test",symnum.args = symnum.args)
+  # Add pairwise comparisons p-value
+
 ```
 
 # ```{r}
